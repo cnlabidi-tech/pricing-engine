@@ -1,8 +1,12 @@
 package com.pricing.engine.list;
 
+import com.pricing.engine.list.discount.DiscountCode;
+import com.pricing.engine.list.discount.DiscountStrategy;
+
 /**
  * Main pricing engine that orchestrates price calculations
  * Delegates discount and tax calculations to specialized classes
+ * Uses Strategy pattern for flexible discount calculations
  */
 public class PricingEngine {
     
@@ -47,24 +51,27 @@ public class PricingEngine {
         // Parse customer type
         CustomerType customerType = CustomerType.fromString(customerTypeStr);
         
-        // Normalize discount code
-        String normalizedCode = DiscountCalculator.normalizeCode(discountCode);
+        // Parse discount code and get strategy
+        DiscountCode code = DiscountCode.fromString(discountCode);
+        DiscountStrategy codeStrategy = code.getStrategy();
         
         // Calculate subtotal
         double subtotal = calculateSubtotal(prices, quantities);
         
-        // Calculate discount
-        double discount = discountCalculator.calculateTotalDiscount(
-            subtotal,
-            customerType,
-            normalizedCode
-        );
+        // Calculate customer type discount
+        double customerDiscount = subtotal * customerType.getDiscountRate();
+        
+        // Calculate code discount using strategy
+        double codeDiscount = codeStrategy.calculateDiscount(subtotal);
+        
+        // Total discount
+        double totalDiscount = customerDiscount + codeDiscount;
         
         // Calculate tax
-        double tax = taxCalculator.calculateTax(subtotal, discount);
+        double tax = taxCalculator.calculateTax(subtotal, totalDiscount);
         
         // Final price
-        return subtotal - discount + tax;
+        return subtotal - totalDiscount + tax;
     }
 
     /**
