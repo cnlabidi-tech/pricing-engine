@@ -18,14 +18,25 @@ pricing-engine/
 │   └── build.gradle
 ├── list/                         # Core pricing engine library
 │   ├── src/main/java/.../list/
-│   │   └── PricingEngine.java   # Pricing calculation logic
+│   │   ├── PricingEngine.java   # Main orchestrator
+│   │   ├── PricingResult.java   # Result object with breakdown
+│   │   ├── CustomerType.java    # Enum for customer types
+│   │   ├── DiscountCalculator.java  # Discount calculation
+│   │   ├── TaxCalculator.java   # Tax calculation
+│   │   └── discount/            # Strategy pattern for discounts
+│   │       ├── DiscountStrategy.java
+│   │       ├── DiscountCode.java
+│   │       ├── PercentageDiscount.java
+│   │       ├── FixedDiscount.java
+│   │       └── NoDiscount.java
 │   ├── src/test/java/.../list/
-│   │   └── PricingEngineTest.java # JUnit 5 tests
+│   │   └── PricingEngineTest.java # 14 comprehensive JUnit 5 tests
 │   └── build.gradle
-├── utilities/                    # Utilities module (optional)
+├── utilities/                    # Utilities module
 │   └── build.gradle
 ├── settings.gradle
 ├── README.md
+├── simple_integration_test.py    # Python integration tests (4 tests)
 └── .gitignore
 ```
 
@@ -63,47 +74,107 @@ python integration_test.py
 ./gradlew run
 ```
 
-## Pricing Logic
+## Refactoring & Design Patterns
 
-### Discount Calculation
-- **VIP customers**: 20% discount on subtotal
-- **REGULAR customers**: 5% discount on subtotal
-- **Discount codes** (e.g., SAVE10): Additional fixed amount discount
+This project demonstrates **progressive refactoring** with clear separation of concerns:
 
-### Tax Calculation
-- 15% tax applied on (subtotal - discount)
+### Phase 1: Separation of Concerns
+- Extracted `CustomerType` enum for customer type management
+- Created `DiscountCalculator` for all discount logic
+- Created `TaxCalculator` for tax calculations
+- Refactored `PricingEngine` to orchestrate calculations
 
-### Final Price Formula
+### Phase 2: Strategy Pattern
+- Implemented `DiscountStrategy` interface for flexible discount calculations
+- Created concrete strategies: `PercentageDiscount`, `FixedDiscount`, `NoDiscount`
+- Introduced `DiscountCode` enum with built-in strategies
+- Enables easy extension with new discount types
+
+### Phase 3: Result Object
+- Created `PricingResult` immutable class for detailed breakdowns
+- Added `calculateWithDetails()` method to get complete pricing information
+- Provides `getDetailedBreakdown()` for formatted output
+- Better API design for client code
+
+### Key Design Benefits
+✅ **Single Responsibility**: Each class has one reason to change
+✅ **Open/Closed**: Easy to extend with new discount strategies
+✅ **Dependency Inversion**: Depends on abstractions (DiscountStrategy)
+✅ **Testability**: Each component can be tested independently
+✅ **Maintainability**: Clear, well-documented code structure
+
+## Testing
+
+### Unit Tests (JUnit 5)
+**14 comprehensive tests** covering:
+- Happy path scenarios (VIP, REGULAR customers)
+- Multiple items with various discount codes
+- Edge cases (zero prices, negative values, null inputs)
+- Input validation and error handling
+- Case-insensitive input handling
+
+Run tests:
+```bash
+./gradlew test
 ```
-Final Price = (Subtotal - Discount) + Tax
+
+### Integration Tests (Python)
+**4 integration tests** verifying:
+- Application runs successfully
+- Final price is calculated correctly
+- Expected values match calculations
+- Output format is correct
+
+Run tests:
+```bash
+python simple_integration_test.py
 ```
 
-## Example
+## Example Usage
 
-```
-Prices: [100.0, 200.0]
-Quantities: [1, 2]
-Customer Type: VIP
-Discount Code: SAVE10
+```java
+PricingEngine engine = new PricingEngine();
 
-Calculation:
-- Subtotal: 100*1 + 200*2 = 500
-- VIP Discount (20%): 100
-- Code Discount (SAVE10): 10
-- Total Discount: 110
-- Tax (15% on 390): 58.5
-- Final Price: 390 + 58.5 = 448.5
+double[] prices = {100.0, 200.0};
+int[] quantities = {1, 2};
+
+// Simple calculation
+double finalPrice = engine.calculateFinalPrice(
+    prices, quantities, "VIP", "SAVE10"
+);
+// Returns: 448.5
+
+// Detailed breakdown
+PricingResult result = engine.calculateWithDetails(
+    prices, quantities, "VIP", "SAVE10"
+);
+System.out.println(result.getDetailedBreakdown());
+// Output:
+// Subtotal:         $500.00
+// Customer Discount: -$100.00
+// Code Discount:     -$10.00
+// Total Discount:    -$110.00
+// Tax (15%):         +$58.50
+// Final Price:       $448.50
 ```
 
 ## Lab Workflow
 
 This project demonstrates a complete software engineering workflow:
-1. ✅ Gradle-based multi-project build
-2. ✅ Unit testing with JUnit 5
-3. ✅ Git/GitHub version control
-4. 🔄 Code refactoring with clear commits
-5. 🔄 Integration testing with Python
-6. 🔄 Continuous improvement and testing
+1. ✅ Gradle-based multi-project build (2 modules: app, list)
+2. ✅ Unit testing with JUnit 5 (14 comprehensive tests)
+3. ✅ Git/GitHub version control (5 commits with clear messages)
+4. ✅ Code refactoring with clear commits (3 refactoring phases)
+5. ✅ Integration testing with Python (4 tests passing)
+6. ✅ Comprehensive documentation
+
+## Git Commit History
+
+- `2143397` - Initial commit: Gradle project setup with tests
+- `d9e2ea6` - Refactor: Separate concerns (CustomerType, DiscountCalculator, TaxCalculator)
+- `4fdc0e8` - Refactor: Implement Strategy pattern for discounts
+- `c0b0d5b` - Refactor: Add PricingResult class
+- `41bc6eb` - Add: Python-based integration tests
 
 ## How to Contribute
 
