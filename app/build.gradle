@@ -1,0 +1,15 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':list')
+}
+
+application {
+    mainClass = 'com.pricing.engine.app.App'
+}
