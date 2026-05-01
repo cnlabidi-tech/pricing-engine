@@ -31,6 +31,52 @@ public class PricingEngine {
     }
 
     /**
+     * Calculate pricing with detailed breakdown
+     * @param prices array of item prices
+     * @param quantities array of item quantities
+     * @param customerTypeStr customer type as string (REGULAR or VIP)
+     * @param discountCode discount code (SAVE10, SAVE20, NONE, etc.)
+     * @return PricingResult with all pricing details
+     * @throws IllegalArgumentException if inputs are invalid
+     */
+    public PricingResult calculateWithDetails(
+            double[] prices,
+            int[] quantities,
+            String customerTypeStr,
+            String discountCode) {
+        
+        // Validate inputs
+        validateInputs(prices, quantities);
+        
+        // Parse customer type
+        CustomerType customerType = CustomerType.fromString(customerTypeStr);
+        
+        // Parse discount code and get strategy
+        DiscountCode code = DiscountCode.fromString(discountCode);
+        DiscountStrategy codeStrategy = code.getStrategy();
+        
+        // Calculate subtotal
+        double subtotal = calculateSubtotal(prices, quantities);
+        
+        // Calculate customer type discount
+        double customerDiscount = subtotal * customerType.getDiscountRate();
+        
+        // Calculate code discount using strategy
+        double codeDiscount = codeStrategy.calculateDiscount(subtotal);
+        
+        // Total discount
+        double totalDiscount = customerDiscount + codeDiscount;
+        
+        // Calculate tax
+        double tax = taxCalculator.calculateTax(subtotal, totalDiscount);
+        
+        // Final price
+        double finalPrice = subtotal - totalDiscount + tax;
+        
+        return new PricingResult(subtotal, customerDiscount, codeDiscount, tax, finalPrice);
+    }
+
+    /**
      * Calculate final price including tax and discount
      * @param prices array of item prices
      * @param quantities array of item quantities
